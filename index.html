@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<body>
+<center>
+<H2>Macau</H2>
+<br><br>
+Computer Cards:
+<br><br>
+<div id="cpucards"> </div>
+<br><br><br>
+<div id="currentpile"> </div>
+<br><br>
+<div id="action"> < -- ></div>
+<br><br>
+Your Cards:
+<br><br>
+<div id="playercards"> </div>
+<br>
+<input type="button" value="Draw Card!" onclick="playerdraws()">
+<input type="button" value="Do Action!" onclick="action()">
+<br><br><br><br>
+Remaining Cards:
+<br><br>
+<div id="unused"> </div>
+</center>
+<script>
+
+let deck = shuffle(getDeck());
+let player = [];
+let cpu = [];
+let pile = [];
+let cpuplaying = true;
+
+//initialize deck
+function getDeck() {
+let suits = ["♠", "♦", "♣", "♥"];
+let values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+
+	let playdeck = new Array();
+
+for(let i = 0; i < suits.length; i++)
+	{
+		for(let x = 0; x < values.length; x++)
+		{
+			let card = {v: values[x], c: suits[i]};
+		playdeck.push(card);
+		}
+	}
+	return playdeck;
+};
+
+function playerdraws() {
+  draw(player,1);
+	returnpile();
+	if (cpuplaying  === true) {
+	    cpuplaycard();
+	}
+};
+
+
+//sort (player) deck by colour and number
+function sortdeck(x){
+	//sort by colour first
+	let spade = [];
+	let club = [];
+	let diamond = [];
+	let heart = [];
+  let sorteddeck = []
+	for (var card of x) {
+      if (card.c === '♠') {
+			 spade.push(card)
+      }
+			if (card.c === '♣') {
+			 club.push(card)
+			}
+			if (card.c === '♦') {
+			 diamond.push(card)
+			}
+			if (card.c === '♥') {
+			 heart.push(card)
+			}
+		}
+sorteddeck = [...spade, ...diamond, ...club, ... heart];
+player = [];
+player = sorteddeck;
+redraw();
+};
+
+
+// shuffle array
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
+//drawcard function
+function draw(x,j){
+	let toreturn;
+  for (var i = 0; i < j; i++) {
+    let temp = deck.shift();
+    toreturn = temp;
+    x.push(temp);
+  }
+	sortdeck(player);
+  redraw();
+  return toreturn;
+};
+
+function displaycards(where,what) {
+  let temp = '';
+  let number = 0;
+  for (var card of what) {
+    temp = card.c + "" + card.v;
+    let para = document.createElement("span");
+    let t = document.createTextNode(temp);
+    para.dataset.cardc = card.c;
+    para.dataset.cardv = card.v;
+    para.dataset.cardo = where.id;
+    para.dataset.cardn = number;
+
+    if (card.c == "♥" || card.c == "♦") {
+      para.style = "color:red; border: 1px solid black; padding:3px; margin:2px";
+    } else {
+      para.style = "color:black; border: 1px solid black; padding:3px; margin:2px";
+    };
+    // see remaining deck
+    // if (where == unused) {
+    //    para.style = "color:white; border: 1px solid black; padding:3px; margin:2px";
+    // }
+
+    // see cpu deck
+    // if (where == cpucards) {
+    //    para.style = "color:white; border: 1px solid black; padding:3px; margin:2px";
+    // }
+    number++;
+    para.appendChild(t);
+
+    if (where == playercards) {
+      para.addEventListener("click", playcard);
+    };
+    document.getElementById(where.id).appendChild(para);
+  }
+};
+
+function start(){
+  let drawn = draw(pile, 1).v;
+	if (drawn == '2' || drawn == 'A' || drawn == '3' || drawn == '4' || drawn == 'J' || drawn == 'K') {
+		start();
+ 	};
+			sortdeck(player);
+};
+
+function cpuplaycard(){
+  let val = pile[pile.length-1].v;
+  let col = pile[pile.length-1].c;
+  let num = 0;
+  let drawcard = true;
+
+for (var card of cpu) {
+  let cardc = card.c;
+  let cardv = card.v;
+  if (cardc == col || cardv == val ) {
+    pile.push(cpu[num]);
+    cpu.splice(num,1);
+    drawcard = false;
+    break;
+}
+  num++;
+}
+
+if (drawcard == true) {
+  draw(cpu,1);
+}
+		returnpile();
+		redraw();
+};
+
+function playcard(x) {
+  let cardc = x.currentTarget.dataset.cardc;
+  let cardv = x.currentTarget.dataset.cardv;
+  let owner = x.currentTarget.dataset.cardo;
+  let num = x.currentTarget.dataset.cardn;
+  let val = pile[pile.length-1].v;
+  let col = pile[pile.length-1].c;
+
+  if (cardc == col || cardv == val ) {
+      pile.push(player[num]);
+      player.splice(num,1);
+			if (cpuplaying  === true) {
+			    cpuplaycard();
+			}
+  }
+	returnpile();
+	redraw();
+};
+
+function returnpile(){
+	let lastcard = pile[pile.length-1];
+
+if (deck.length == 0) {
+	console.log('need to shuffle')
+	deck=[];
+
+	for (let i = 0; i < pile.length - 1; i++) {
+		deck[i] = pile[i];
+	}
+	pile = [];
+	pile[0] = lastcard;
+		shuffle(deck);
+	}
+redraw();
+};
+
+function clear(){
+  removeAllChildNodes(cpucards);
+  removeAllChildNodes(playercards);
+  removeAllChildNodes(currentpile);
+  removeAllChildNodes(unused);
+};
+
+function removeAllChildNodes(parent) {
+    while (parent.firstChild) {
+        parent.removeChild(parent.firstChild);
+    }
+};
+
+function redraw() {
+  clear();
+  displaycards(cpucards, cpu);
+  displaycards(playercards, player);
+  displaycards(currentpile, pile);
+  displaycards(unused, deck);
+};
+
+function action(){
+
+};
+
+draw(player, 25);
+draw(cpu, 5);
+start();
+redraw();
+
+</script>
+
+</body>
+</html>
